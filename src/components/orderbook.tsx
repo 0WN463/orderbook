@@ -75,6 +75,7 @@ export default function Orderbook({ token }: { token: string }) {
         </thead>
         <tbody key={state.timestamp}>
           {state.bids
+            .filter((o) => o[1] > 0)
             .toSorted((a, b) => b[0] - a[0])
             .slice(0, LIMIT)
             .map((b) => (
@@ -97,6 +98,7 @@ export default function Orderbook({ token }: { token: string }) {
         </thead>
         <tbody key={state.timestamp}>
           {state.asks
+            .filter((o) => o[1] > 0)
             .toSorted((a, b) => b[0] - a[0])
             .slice(0, LIMIT)
             .map((b) => (
