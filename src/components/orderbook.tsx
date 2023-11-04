@@ -14,6 +14,12 @@ type Orderbook = {
   timestamp: number;
 };
 
+const merge = (orders: Order[], order: Order) => {
+  const index = orders.find((o) => o?.[0] == order?.[0]);
+
+  return index !== undefined ? orders.with(index, order) : [...orders, order];
+};
+
 export default function Orderbook({ token }: { token: string }) {
   const [state, setState] = useState<Orderbook>();
 
@@ -26,7 +32,21 @@ export default function Orderbook({ token }: { token: string }) {
     const sub = centrifuge.newSubscription("orderbook:BTC-USD");
 
     sub.on("publication", (ctx) => {
-      //setState(s => [...s, ctx.data]);
+      setState((s) => {
+        if (s === undefined) return s;
+        const ask = ctx.data.asks?.[0];
+        const bid = ctx.data.bids?.[0];
+
+        const newAsks = ask !== undefined ? merge(s.asks, ask) : s.asks;
+        const newBids = bid !== undefined ? merge(s.bids, bid) : s.bids;
+
+        return {
+          ...s,
+          asks: newAsks,
+          bids: newBids,
+          timestamp: ctx.data.timestamp,
+        };
+      });
     });
 
     sub.on("subscribed", (ctx) => {
@@ -53,7 +73,7 @@ export default function Orderbook({ token }: { token: string }) {
             <th>Total</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody key={state.timestamp}>
           {state.bids
             .toSorted((a, b) => b[0] - a[0])
             .slice(0, LIMIT)
@@ -75,7 +95,7 @@ export default function Orderbook({ token }: { token: string }) {
             <th>Total</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody key={state.timestamp}>
           {state.asks
             .toSorted((a, b) => b[0] - a[0])
             .slice(0, LIMIT)
