@@ -39,7 +39,13 @@ const renderOrders = (orders: Order[], orderType: "ask" | "bid") =>
       </tr>
     ));
 
-export default function Orderbook({ token }: { token: string }) {
+export default function Orderbook({
+  token,
+  symbol,
+}: {
+  token: string;
+  symbol: string;
+}) {
   const [state, setState] = useState<Orderbook>();
 
   // Used to detect if need to re-establish websocket
@@ -53,7 +59,7 @@ export default function Orderbook({ token }: { token: string }) {
     });
 
     centrifuge.connect();
-    const sub = centrifuge.newSubscription("orderbook:BTC-USD");
+    const sub = centrifuge.newSubscription(`orderbook:${symbol}`);
     sub.on("publication", (ctx) => {
       setState((s) => {
         if (s === undefined) return s;
@@ -81,7 +87,7 @@ export default function Orderbook({ token }: { token: string }) {
     sub.subscribe();
 
     return () => centrifuge.disconnect();
-  }, [token, nonce]);
+  }, [token, symbol, nonce]);
 
   if (!state) return "Loading";
 

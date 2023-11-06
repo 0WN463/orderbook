@@ -5,7 +5,11 @@ export default function Home() {
   const token = process.env.PUBLIC_JWT;
   return (
     <main>
-      {token ? <OrderBook token={token} /> : "Error: token undefined"}
+      {token ? (
+        <OrderBook token={token} symbol="BTC-USD" />
+      ) : (
+        "Error: token undefined"
+      )}
     </main>
   );
 }
