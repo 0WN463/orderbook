@@ -20,26 +20,32 @@ const merge = (orders: Order[], order: Order) => {
   return index !== undefined ? orders.with(index, order) : [...orders, order];
 };
 
-const renderOrders = (orders: Order[], order: "asc" | "desc") =>
+const renderOrders = (orders: Order[], orderType: "ask" | "bid") =>
   orders
     .filter((o) => Number(o[1]) > 0)
     .toSorted((a, b) =>
-      order === "desc"
+      orderType === "bid"
         ? Number(b[0]) - Number(a[0])
         : Number(a[0]) - Number(b[0]),
     )
     .slice(0, LIMIT)
     .map((b) => (
-      <tr key={b[0]} className="border [&>*]:border">
-        <td>{parseInt(b[0])}</td>
-        <td>{b[1]}</td>
+      <tr key={b[0]}>
+        <td className={orderType === "ask" ? "text-green-500" : "text-red-500"}>
+          {parseInt(b[0]).toLocaleString()}
+        </td>
+        <td className="text-right text-gray-400">{b[1]}</td>
         <td></td>
       </tr>
     ));
 
 export default function Orderbook({ token }: { token: string }) {
   const [state, setState] = useState<Orderbook>();
-  const [nonce, setNonce] = useState<number>(0); // used to detect if need to re-establish websocket
+
+  // Used to detect if need to re-establish websocket
+  // Updating this will reset the websocket
+  // Used in event that sequence number has misaligned
+  const [nonce, setNonce] = useState<number>(0);
 
   useEffect(() => {
     const centrifuge = new Centrifuge("wss://api.prod.rabbitx.io/ws", {
@@ -77,35 +83,37 @@ export default function Orderbook({ token }: { token: string }) {
     return () => centrifuge.disconnect();
   }, [token, nonce]);
 
-  if (!token || !state) return "Loading";
+  if (!state) return "Loading";
 
+  const tableHeaders = (
+    <tr>
+      <th className="text-left">
+        Price{" "}
+        <span className="bg-gray-100 rounded text-xs p-0.5">
+          {state.market.split("-")[0]}
+        </span>
+      </th>
+      <th className="text-right">
+        Amount{" "}
+        <span className="bg-gray-100 rounded text-xs p-0.5">
+          {state.market.split("-")[1]}
+        </span>
+      </th>
+      <th>Total</th>
+    </tr>
+  );
   return (
     <>
-      <h1> {state.market} </h1>
       Last updated: {new Date(state.timestamp / 1_000).toLocaleString()}
-      <table className="border-2">
+      <table className="border-2 w-96">
         <caption> Bids </caption>
-        <thead>
-          <tr className="border [&>*]:border">
-            <th>Price</th>
-            <th>Amount</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody key={state.timestamp}>
-          {renderOrders(state.bids, "desc")}
-        </tbody>
+        <thead>{tableHeaders}</thead>
+        <tbody key={state.timestamp}>{renderOrders(state.bids, "bid")}</tbody>
       </table>
-      <table className="border-2">
+      <table className="border-2 w-96">
         <caption> Asks </caption>
-        <thead>
-          <tr className="border">
-            <th>Price</th>
-            <th>Amount</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody key={state.timestamp}>{renderOrders(state.asks, "asc")}</tbody>
+        <thead>{tableHeaders}</thead>
+        <tbody key={state.timestamp}>{renderOrders(state.asks, "ask")}</tbody>
       </table>
     </>
   );
