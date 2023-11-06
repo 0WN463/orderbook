@@ -2,7 +2,7 @@
 import { Centrifuge } from "centrifuge";
 import { useState, useEffect } from "react";
 
-const LIMIT = 10;
+const LIMIT = 10; // How many rows of orders to show
 
 type Order = [string, string]; // [price, size]
 
