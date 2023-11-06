@@ -15,13 +15,14 @@ type Orderbook = {
 };
 
 const merge = (orders: Order[], order: Order) => {
-  const index = orders.find((o) => o?.[0] == order?.[0]);
+  const index = orders.indexOf((o) => o?.[0] == order?.[0]);
 
   return index !== undefined ? orders.with(index, order) : [...orders, order];
 };
 
 export default function Orderbook({ token }: { token: string }) {
   const [state, setState] = useState<Orderbook>();
+  const [nonce, setNonce] = useState<number>(0); // used to detect if need to re-establish websocket
 
   useEffect(() => {
     const centrifuge = new Centrifuge("wss://api.prod.rabbitx.io/ws", {
@@ -30,10 +31,10 @@ export default function Orderbook({ token }: { token: string }) {
 
     centrifuge.connect();
     const sub = centrifuge.newSubscription("orderbook:BTC-USD");
-
     sub.on("publication", (ctx) => {
       setState((s) => {
         if (s === undefined) return s;
+        if (ctx.data.sequence != s.sequence + 1) setNonce((n) => n + 1);
         const ask = ctx.data.asks?.[0];
         const bid = ctx.data.bids?.[0];
 
@@ -45,6 +46,7 @@ export default function Orderbook({ token }: { token: string }) {
           asks: newAsks,
           bids: newBids,
           timestamp: ctx.data.timestamp,
+          sequence: ctx.data.sequence,
         };
       });
     });
@@ -56,7 +58,7 @@ export default function Orderbook({ token }: { token: string }) {
     sub.subscribe();
 
     return () => centrifuge.disconnect();
-  }, [token]);
+  }, [token, nonce]);
 
   if (!token || !state) return "Loading";
 
@@ -80,7 +82,7 @@ export default function Orderbook({ token }: { token: string }) {
             .slice(0, LIMIT)
             .map((b) => (
               <tr key={b[0]} className="border [&>*]:border">
-                <td>{b[0]}</td>
+                <td>{parseInt(b[0])}</td>
                 <td>{b[1]}</td>
                 <td></td>
               </tr>
@@ -103,7 +105,7 @@ export default function Orderbook({ token }: { token: string }) {
             .slice(0, LIMIT)
             .map((b) => (
               <tr key={b[0]} className="border [&>*]:border">
-                <td>{b[0]}</td>
+                <td>{parseInt(b[0])}</td>
                 <td>{b[1]}</td>
                 <td></td>
               </tr>
