@@ -20,10 +20,14 @@ const merge = (orders: Order[], order: Order) => {
   return index !== undefined ? orders.with(index, order) : [...orders, order];
 };
 
-const renderOrders = (orders: Order[]) =>
+const renderOrders = (orders: Order[], order: "asc" | "desc") =>
   orders
     .filter((o) => Number(o[1]) > 0)
-    .toSorted((a, b) => Number(b[0]) - Number(a[0]))
+    .toSorted((a, b) =>
+      order === "desc"
+        ? Number(b[0]) - Number(a[0])
+        : Number(a[0]) - Number(b[0]),
+    )
     .slice(0, LIMIT)
     .map((b) => (
       <tr key={b[0]} className="border [&>*]:border">
@@ -88,7 +92,9 @@ export default function Orderbook({ token }: { token: string }) {
             <th>Total</th>
           </tr>
         </thead>
-        <tbody key={state.timestamp}>{renderOrders(state.bids)}</tbody>
+        <tbody key={state.timestamp}>
+          {renderOrders(state.bids, "desc")}
+        </tbody>
       </table>
       <table className="border-2">
         <caption> Asks </caption>
@@ -99,7 +105,7 @@ export default function Orderbook({ token }: { token: string }) {
             <th>Total</th>
           </tr>
         </thead>
-        <tbody key={state.timestamp}>{renderOrders(state.asks)}</tbody>
+        <tbody key={state.timestamp}>{renderOrders(state.asks, "asc")}</tbody>
       </table>
     </>
   );
