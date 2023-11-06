@@ -5,7 +5,7 @@ export default function Home() {
   const token = process.env.PUBLIC_JWT;
   return (
     <main>
-      <OrderBook token={token} />
+      {token ? <OrderBook token={token} /> : "Error: token undefined"}
     </main>
   );
 }

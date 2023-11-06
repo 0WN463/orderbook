@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 const LIMIT = 10;
 
-type Order = [string, size]; // [price, size]
+type Order = [string, string]; // [price, size]
 
 type Orderbook = {
   market: string;
@@ -15,7 +15,7 @@ type Orderbook = {
 };
 
 const merge = (orders: Order[], order: Order) => {
-  const index = orders.indexOf((o) => o?.[0] == order?.[0]);
+  const index = orders.findIndex((o) => o?.[0] == order?.[0]);
 
   return index !== undefined ? orders.with(index, order) : [...orders, order];
 };
@@ -77,8 +77,8 @@ export default function Orderbook({ token }: { token: string }) {
         </thead>
         <tbody key={state.timestamp}>
           {state.bids
-            .filter((o) => o[1] > 0)
-            .toSorted((a, b) => b[0] - a[0])
+            .filter((o) => Number(o[1]) > 0)
+            .toSorted((a, b) => Number(b[0]) - Number(a[0]))
             .slice(0, LIMIT)
             .map((b) => (
               <tr key={b[0]} className="border [&>*]:border">
@@ -100,8 +100,8 @@ export default function Orderbook({ token }: { token: string }) {
         </thead>
         <tbody key={state.timestamp}>
           {state.asks
-            .filter((o) => o[1] > 0)
-            .toSorted((a, b) => b[0] - a[0])
+            .filter((o) => Number(o[1]) > 0)
+            .toSorted((a, b) => Number(b[0]) - Number(a[0]))
             .slice(0, LIMIT)
             .map((b) => (
               <tr key={b[0]} className="border [&>*]:border">
